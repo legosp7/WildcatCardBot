@@ -162,8 +162,19 @@ async def collection(ctx):
         await ctx.send(embed=embed)
     except:
         await ctx.send("You have no cards! Pull one to start your collection!")
-        
-    
+
+#to be implemented
+@bot.command()
+async def cardlist(ctx):
+    pass
+
+@bot.command()
+async def mycards(ctx):
+    pass
+
+@bot.command()
+async def setdisplay(ctx):
+    pass #thumbnail
 
 
 #ping!
