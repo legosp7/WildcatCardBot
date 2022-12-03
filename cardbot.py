@@ -17,7 +17,7 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix='?',intents=intents)
 SEASON = 'season1' #hardcode this
-rates = {"common":0.7,"rare":0.2,"epic":0.09,"legendary":0.01}
+rates = {"common":0.60,"rare":0.30,"epic":0.09,"legendary":0.01}
 
 class Card:
     def __init__(self, id, name, rarity, image) -> None:
@@ -83,6 +83,10 @@ for line in cards:
         tempCard = Card(line[0],line[1],line[2],line[3])
         TableofCards.set_card(tempCard)
 
+print(TableofCards.get_common())
+print(TableofCards.get_rare())
+print(TableofCards.get_epic())
+print(TableofCards.get_legendary())
 
 #pull a card from the table
 @bot.command()
@@ -99,20 +103,27 @@ async def pullcard(ctx):
         print("Breakpoint!")
         pull = round(random.uniform(0.01,1.00),2)
         print(pull)
+        '''
+        rate error checking
+
+        print(1.00-rates['common'])
+        print(rates['rare'])
+        print(rates['epic'])
+        print(rates['legendary'])'''
         #this'll have to be rewritten eventually for better logic
-        if pull >= rates['common']:
+        if pull >= 1.00-rates['common']:
             pull2 = random.randint(0,len(TableofCards.get_common())-1)
             card = TableofCards.get_common()[pull2]
             readopen.write(card.get_id()+"\n")
-        if pull < rates['common'] and pull >= rates['rare']:
+        elif pull < 1.00-rates['common'] and pull > rates['epic']:
             pull2 = random.randint(0,len(TableofCards.get_rare())-1)
             card = TableofCards.get_rare()[pull2]
             readopen.write(card.get_id()+"\n")
-        if pull < rates['rare'] and pull >= rates['epic']:
+        elif pull <= rates['epic'] and pull > rates['legendary']:
             pull2 = random.randint(0,len(TableofCards.get_epic())-1)
             card = TableofCards.get_epic()[pull2]
             readopen.write(card.get_id()+"\n")
-        if pull == 0.01:
+        elif pull == rates['legendary']:
             pull2 = random.randint(0,len(TableofCards.get_legendary())-1)
             card = TableofCards.get_legendary()[pull2]
             readopen.write(card.get_id()+"\n")
@@ -126,6 +137,7 @@ async def collection(ctx):
     rarities = ["Legendary","Epic","Rare","Common"]
     authorcards = []
     authorcardcount = {}
+    print(ctx.author.display_avatar.url)
     try:
         fileopen = open(f"usercards/{ctx.message.guild.id}{ctx.author.id}cards.csv",'r')
         for line in fileopen:
@@ -136,7 +148,9 @@ async def collection(ctx):
             else:
                 authorcardcount[cardname] = 1
         print(authorcardcount)
-        embed=discord.Embed(title=f"{ctx.message.author.display_name}'s Collection!", color=0xFF5733)
+        embed=discord.Embed(color=0xFF5733)
+        avatar = ctx.author.display_avatar.url
+        embed.set_author(name = f"{ctx.author.display_name}'s Collection!",icon_url=avatar)
         strs = {'common':'','rare':'','epic':'','legendary':''}
         #REDO THIS TOO
         for card in authorcardcount:

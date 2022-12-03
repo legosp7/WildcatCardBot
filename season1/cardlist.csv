@@ -1,5 +1,5 @@
 #id, name, rarity, imagefile, holo, secret rare
-1,Fchy,common,commonFchyholo.png,TRUE,FALSE
+1,Fchy,common,Fchycommon.png,FALSE,FALSE
 2,Okayu,legendary,okayu.jpg,FALSE,FALSE
 3,Stephen,common,stephenCommon.png,FALSE,FALSE
 4,Stephen,rare,stephenRare.png,FALSE,FALSE
@@ -19,3 +19,8 @@
 18,Fchy in Bed,legendary,FCHY_Bed_rest_mega_rare.png,FALSE,TRUE
 19,Sarah,rare,sarahRare.png,FALSE,FALSE
 20,Sarah,epic,sarahEpic.png,FALSE,FALSE
+21,Tax,rare,taxRare.png,FALSE,FALSE
+22,Justin,common,justinCommon.png,FALSE,FALSE
+23,Justin,rare,justinRare.png,FALSE,FALSE
+24,PanikDX,common,panikDXCommon.png,FALSE,FALSE
+25,PanikDX,rare,panikDXRare.png,FALSE,FALSE
