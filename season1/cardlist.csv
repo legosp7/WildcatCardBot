@@ -1,0 +1,22 @@
+#id, name, rarity, imagefile, holo, secret rare
+1,Fchy,common,fchyCommon.png,false,false
+2,Fchy,common,commonFchyholo.png,true,false
+3,Okayu,legendary,okayu.jpg,false,false
+4,Stephen,common,stephenCommon.png,false,false
+5,Stephen,rare,stephenRare.png,false,false
+6,Stephen,epic,stephenEpic.png,false,false
+7,Bahaa,common,bahaaCommon.png,false,false
+8,Christmas Bahaa,rare,christmasBahaa.png,false,false
+9,Winter Sarah,rare,sarahWinter.png,false,false
+10,Grunty,common,gruntyCommon.png,false,false
+11,Grunty,rare,gruntyRare.png,false,false
+12,Jack,common,jackCommon.png,false,false
+13,Jack,rare,jackRare.png,false,false
+14,Trinkets Jack,rare,trinkets_jack_mega_rare.png,false,true
+15,Kream,common,kreamCommon.png,false,false
+16,Kream,rare,kreamRare.png,false,false
+17,Kream,epic,kreamEpic.png,false,false
+18,SnoozeCruise,common,snoozeCommon.png,false,false
+19,SnoozeCruise,rare,snoozeRare.png,false,false
+20,Tax,common,taxCommon.png,false,false
+21,Fchy in Bed,FCHY_Bed_rest_mega_rare.png,false,true
