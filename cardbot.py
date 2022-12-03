@@ -17,6 +17,7 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix='?',intents=intents)
 SEASON = 'season1' #hardcode this
+rates = {"common":0.7,"rare":0.2,"epic":0.09,"legendary":0.01}
 
 class Card:
     def __init__(self, id, name, rarity, image) -> None:
@@ -24,16 +25,10 @@ class Card:
         self._name = name
         self._rarity = rarity
         self._image = image
-    def set_name(self, name):
-        self._name = name
     def get_name(self):
         return self._name
-    def set_rare(self, rare):
-        self._rarity = rare
-    def get_rare(self):
+    def get_rarity(self):
         return self._rarity
-    def set_image(self, image):
-        self._image = image
     def get_image(self):
         return self._image
     def get_id(self):
@@ -45,7 +40,6 @@ class CardTable:
         self._rare = []
         self._epic = []
         self._legendary = []
-        self.rates = {"common":0.5,"rare":0.3,"epic":0.19,"legendary":0.01}
     def get_common(self):
         return self._common
     def get_rare(self):
@@ -55,7 +49,7 @@ class CardTable:
     def get_legendary(self):
         return self._legendary
     def set_card(self,card):
-        x = card.get_rare()
+        x = card.get_rarity()
         if x == 'common':
             self._common.append(card)
         elif x == 'rare':
@@ -64,6 +58,20 @@ class CardTable:
             self._epic.append(card)
         elif x == 'legendary':
             self._legendary.append(card)
+
+def retCard(cardtable, id):
+    for obj in cardtable.get_common():
+        if str(obj.get_id()) == str(id):
+            return obj
+    for obj in cardtable.get_rare():
+        if str(obj.get_id()) == str(id):
+            return obj
+    for obj in cardtable.get_epic():
+        if str(obj.get_id()) == str(id):
+            return obj
+    for obj in cardtable.get_legendary():
+        if str(obj.get_id()) == str(id):
+            return obj
 
 TableofCards = CardTable()
 
@@ -75,44 +83,73 @@ for line in cards:
         tempCard = Card(line[0],line[1],line[2],line[3])
         TableofCards.set_card(tempCard)
 
-    
 
 #pull a card from the table
 @bot.command()
 async def pullcard(ctx):
-    #create/open server + userid file. we have to initilze it here for some reason
-    fileopen = open(f"usercards/{ctx.message.guild.id}{ctx.author.id}cards.csv",'a')
-    fileopen.close()
-    #now we can open
-    readopen = open(f"usercards/{ctx.message.guild.id}{ctx.author.id}cards.csv",'a')
-    print(ctx.author.id)
-    print("Breakpoint!")
-    pull = round(random.uniform(0.01,1.00),2)
-    await ctx.send(pull)
-    if pull >= 0.50:
-        pull2 = random.randint(0,len(TableofCards.get_common())-1)
-        card = TableofCards.get_common()[pull2]
-        await ctx.send(f'You pulled a common {card.get_name()}!')
-        await ctx.send(file=discord.File(f'season1/{card.get_image()}'))
-        readopen.write(card.get_id()+"\n")
-    if pull < 0.50 and pull >= 0.20:
-        pull2 = random.randint(0,len(TableofCards.get_rare())-1)
-        card = TableofCards.get_rare()[pull2]
-        await ctx.send(f'You pulled a rare {card.get_name()}!')
-        await ctx.send(file=discord.File(f'season1/{card.get_image()}'))
-        readopen.write(card.get_id()+"\n")
-    if pull < 0.20 and pull >= 0.02:
-        pull2 = random.randint(0,len(TableofCards.get_epic())-1)
-        card = TableofCards.get_epic()[pull2]
-        await ctx.send(f'You pulled an epic {card.get_name()}!')
-        await ctx.send(file=discord.File(f'season1/{card.get_image()}'))
-        readopen.write(card.get_id()+"\n")
-    if pull == 0.01:
-        pull2 = random.randint(0,len(TableofCards.get_legendary())-1)
-        card = TableofCards.get_legendary()[pull2]
-        await ctx.send(f'You pulled an legendary {card.get_name()}!')
-        await ctx.send(file=discord.File(f'season1/{card.get_image()}'))
-        readopen.write(card.get_id()+"\n")
+    if ctx.author.id == 381325561655721985:
+        await ctx.send("fuck you Jack")
+    else:
+        #create/open server + userid file. we have to initilze it here for some reason
+        fileopen = open(f"usercards/{ctx.message.guild.id}{ctx.author.id}cards.csv",'a')
+        fileopen.close()
+        #now we can open
+        readopen = open(f"usercards/{ctx.message.guild.id}{ctx.author.id}cards.csv",'a')
+        print(ctx.author.id)
+        print("Breakpoint!")
+        pull = round(random.uniform(0.01,1.00),2)
+        print(pull)
+        #this'll have to be rewritten eventually for better logic
+        if pull >= rates['common']:
+            pull2 = random.randint(0,len(TableofCards.get_common())-1)
+            card = TableofCards.get_common()[pull2]
+            readopen.write(card.get_id()+"\n")
+        if pull < rates['common'] and pull >= rates['rare']:
+            pull2 = random.randint(0,len(TableofCards.get_rare())-1)
+            card = TableofCards.get_rare()[pull2]
+            readopen.write(card.get_id()+"\n")
+        if pull < rates['rare'] and pull >= rates['epic']:
+            pull2 = random.randint(0,len(TableofCards.get_epic())-1)
+            card = TableofCards.get_epic()[pull2]
+            readopen.write(card.get_id()+"\n")
+        if pull == 0.01:
+            pull2 = random.randint(0,len(TableofCards.get_legendary())-1)
+            card = TableofCards.get_legendary()[pull2]
+            readopen.write(card.get_id()+"\n")
+        file = discord.File(f'season1/{card.get_image()}',filename = card.get_image())
+        embed=discord.Embed(title=f"{ctx.message.author.display_name} pulled a {card.get_rarity()} {card.get_name()}!", color=0xFF5733)
+        embed.set_image(url = f"attachment://{file.filename}")
+        await ctx.send(file=file, embed=embed)
+
+@bot.command()
+async def collection(ctx):
+    rarities = ["Legendary","Epic","Rare","Common"]
+    authorcards = []
+    authorcardcount = {}
+    try:
+        fileopen = open(f"usercards/{ctx.message.guild.id}{ctx.author.id}cards.csv",'r')
+        for line in fileopen:
+            cardname = retCard(TableofCards,line.strip())
+            authorcards.append(cardname)
+            if cardname in authorcardcount:
+                authorcardcount[cardname] += 1
+            else:
+                authorcardcount[cardname] = 1
+        print(authorcardcount)
+        embed=discord.Embed(title=f"{ctx.message.author.display_name}'s Collection!", color=0xFF5733)
+        strs = {'common':'','rare':'','epic':'','legendary':''}
+        #REDO THIS TOO
+        for card in authorcardcount:
+                strs[card.get_rarity()] += (f'{card.get_name()}     x{authorcardcount[card]}\n')
+        #REDO THIS PART LATER SO IT ISN'T SO SCUFFED
+        for rarity in rarities:
+            if strs[rarity.lower()] != '':
+                embed.add_field(name=rarity, value=strs[rarity.lower()], inline=False)
+        await ctx.send(embed=embed)
+    except:
+        await ctx.send("You have no cards! Pull one to start your collection!")
+        
+    
 
 
 #ping!
@@ -151,129 +188,4 @@ async def on_message(message):
 
 bot.run(TOKEN)
 
-'''
-#birthday class
-class Birthday:
-    def __init__(self,name,month,day):
-        self._name = name
-        self._birthday = f"{month} {day}"
-    def get_name(self):
-        return self._name
-    def get_birthday(self):
-        return self._birthday
-
-#place all birthdays in dict
-birthdaylist = []
-birthdayfile = open('birthdays.csv','r')
-for line in birthdayfile:
-    if line[0] != '#':
-        line = line.strip('\n')
-        line = line.split(',')
-        monthandday = line[1].split(' ')
-        bday = Birthday(line[0],monthandday[0],monthandday[1])
-        birthdaylist.append(bday)
-
-for obj in birthdaylist:
-    print(obj.get_name())
-
-date_object = datetime.date.today()
-date_object = str(date_object)
-monthsofyear = ["January", "February",'March','April','May','June','July','August','September','October','November','December']
-dateotoday = date_object.split('-')
-print(dateotoday)
-if dateotoday[2][0] == '0':
-    day = dateotoday[2][1]
-else:
-    day = dateotoday[2]
-todaysdate = f'{monthsofyear[int(dateotoday[1])-1]} {day}'
-print(todaysdate)
-for obj in birthdaylist:
-    if obj.get_birthday() == todaysdate:
-        print("Birthday Found!")
-
-@tasks.loop(hours=12)
-async def checkbirthdayandping():
-    channel = bot.get_channel(1026643743136301087)
-    await channel.send('THIS IS WORKING!')
-    date_object = datetime.date.today()
-    date_object = str(date_object)
-    monthsofyear = ["January", "February",'March','April','May','June','July','August','September','October','November','December']
-    dateotoday = date_object.split('-')
-    print(dateotoday)
-    if dateotoday[2][0] == '0':
-        day = dateotoday[2][1]
-    else:
-        day = dateotoday[2]
-    todaysdate = f'{monthsofyear[int(dateotoday[1])-1]} {day}'
-    print(todaysdate)
-    for obj in birthdaylist:
-        if obj.get_birthday() == todaysdate:
-            print("Birthday Found!")
-            fileopen = open('userlist.csv','r')
-            for user in users:
-                await channel.send(f'{user.mention} Today is {obj.get_name()} birthday')
-            
-            
-#global userlist to be implemented
-users = []
-
-#add a user to the list of pings. may need to be changed into a file later (tested, doesn't work)
-@bot.command()
-async def adduser(ctx):
-    fileopen = open('userlist.csv','a')
-    fileopen.write(f'{ctx.author}\n')
-    users.append(ctx.author)
-    fileopen.close()
-    await ctx.send('User added!')
-
-#return a list of users
-@bot.command()
-async def getusers(ctx):
-    fileopen = open('userlist.csv','a')
-    for user in users:
-        await ctx.send(user.mention)
-    fileopen.close()
-    
-#now implemented in the get users command
-def ping_users(users):
-    pass
-    
-#returns all the birthdays in the list
-@bot.command()
-async def listbirthday(ctx):
-    birthdayfile = open('birthdays.csv','r')
-    for line in birthdayfile:
-        if line[0] != '#':
-            await ctx.send(line)
-    birthdayfile.close()
-
-#add a birthday to the file
-@bot.command()
-async def addbirthday(ctx):
-    birthdayfile = open('birthdays.csv','a')
-    months = ["january", "february",'march','april','may','june','july','august','september','october','november','december']
-    await ctx.send("Please Enter a Name")
-    # This will make sure that the response will only be registered if the following conditions are met:
-    def checkname(msg):
-        return msg.author == ctx.author and msg.channel == ctx.channel
-    name = await bot.wait_for("message", check=checkname)
-    await ctx.send("Please Enter a Month and Day")
-    def checkdate(msg):
-        return msg.author == ctx.author and msg.channel == ctx.channel \
-        and msg.content[0:(msg.content.index(' '))].lower() in months and \
-        int(msg.content[(msg.content.index(' '))+1:]) in range(1,31)
-    date = await bot.wait_for('message',check=checkdate)
-    await ctx.send(date.content)
-    birthdayfile.write(f'{name.content},{date.content}\n')
-    datesplit = date.content.split(' ')
-    bday = Birthday(name.content,datesplit[0],datesplit[1])
-    birthdaylist.append(bday)
-    await ctx.send('Done!')
-    birthdayfile.close()
-
-#just tells me if the bot has connected
-@bot.event
-async def on_ready():
-    print(f'{bot.user.name} has connected to Discord!')
-    checkbirthdayandping.start()'''
 
