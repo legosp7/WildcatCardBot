@@ -1,34 +1,34 @@
-#id, name, rarity, imagefile, holo, secret rare
-1,Fchy,common,fchyCommon.png,FALSE,FALSE
+#id, name, rarity, imagefile, holo, secret rare, packs
+1,Fchy,common,fchyCommon.png,FALSE,FALSE,Competitive Team
 2,Okayu,legendary,okayu.jpg,FALSE,FALSE
-3,Stephen,common,stephenCommon.png,FALSE,FALSE
-4,Stephen,rare,stephenRare.png,FALSE,FALSE
-5,Stephen,epic,stephenEpic.png,FALSE,FALSE
+3,Stephen,common,stephenCommon.png,FALSE,FALSE,Club Leads,Seamen Gaming,Events Team
+4,Stephen,rare,stephenRare.png,FALSE,FALSE,Club Leads,Seamen Gaming,Events Team
+5,Stephen,epic,stephenEpic.png,FALSE,FALSE,Club Leads,Seamen Gaming,Events Team
 6,Bahaa,common,bahaaCommon.png,FALSE,FALSE
-7,Grunty,common,gruntyCommon.png,FALSE,FALSE
-8,Grunty,rare,gruntyRare.png,FALSE,FALSE
-9,Jack,common,jackCommon.png,FALSE,FALSE
-10,Jack,rare,jackRare.png,FALSE,FALSE
-11,Jack,epic,jackEpic.png,FALSE,FALSE
-12,Trinkets Jack,legendary,trinkets_jack_mega_rare.png,FALSE,TRUE
-12,Kream,common,kreamCommon.png,FALSE,FALSE
-14,Kream,rare,kreamRare.png,FALSE,FALSE
-15,Kream,epic,kreamEpic.png,FALSE,FALSE
+7,Grunty,common,gruntyCommon.png,FALSE,FALSE,Moderator
+8,Grunty,rare,gruntyRare.png,FALSE,FALSE,Moderator
+9,Jack,common,jackCommon.png,FALSE,FALSE,Club Leads,Seamen Gaming,Competitive Team
+10,Jack,rare,jackRare.png,FALSE,FALSE,Club Leads,Seamen Gaming,Competitive Team
+11,Jack,epic,jackEpic.png,FALSE,FALSE,Club Leads,Seamen Gaming,Competitive Team
+12,Trinkets Jack,legendary,trinkets_jack_mega_rare.png,FALSE,TRUE,Club Leads,Seamen Gaming,Competitive Team
+13,Kream,common,kreamCommon.png,FALSE,FALSE,Moderator
+14,Kream,rare,kreamRare.png,FALSE,FALSE,Moderator
+15,Kream,epic,kreamEpic.png,FALSE,FALSE,Moderator
 16,SnoozeCruise,common,snoozeCommon.png,FALSE,FALSE
 17,SnoozeCruise,rare,snoozeRare.png,FALSE,FALSE
-18,Tax,common,taxCommon.png,FALSE,FALSE
-19,Fchy in Bed,legendary,FCHY_Bed_rest_mega_rare.png,FALSE,TRUE
-20,Sarah,rare,sarahRare.png,FALSE,FALSE
-21,Sarah,epic,sarahEpic.png,FALSE,FALSE
-22,Tax,rare,taxRare.png,FALSE,FALSE
-23,Justin,common,justinCommon.png,FALSE,FALSE
-24,Justin,rare,justinRare.png,FALSE,FALSE
+18,Tax,common,taxCommon.png,FALSE,FALSE,Competitive Team
+19,Fchy in Bed,legendary,FCHY_Bed_rest_mega_rare.png,FALSE,TRUE,Competitive Team
+20,Sarah,rare,sarahRare.png,FALSE,FALSE,Seamen Gaming,Social Media Team
+21,Sarah,epic,sarahEpic.png,FALSE,FALSE,Seamen Gaming,Social Media Team
+22,Tax,rare,taxRare.png,FALSE,FALSE,Competitive Team
+23,Justin,common,justinCommon.png,FALSE,FALSE,Creative Team,Competitive Team
+24,Justin,rare,justinRare.png,FALSE,FALSE,Creative Team,Competitive Team
 25,PanikDX,common,panikDXCommon.png,FALSE,FALSE
 26,PanikDX,rare,panikDXRare.png,FALSE,FALSE
-27,Ranma,common,ranmaCommon.png,FALSE,FALSE
-28,Ranma,rare,ranmaRare.png,FALSE,FALSE
-29,Ranma,epic,ranmaEpic.png,FALSE,FALSE
-30,Ted,common,tedCommon.png,FALSE,FALSE
-31,Ted,rare,tedRare.png,FALSE,FALSE
-32,Ted,epic,tedEpic.png,FALSE,FALSE
-33,Astral,legendary,astralLegendary.png,FALSE,FALSE
+27,Ranma,common,ranmaCommon.png,FALSE,FALSE,Moderator
+28,Ranma,rare,ranmaRare.png,FALSE,FALSE,Moderator
+29,Ranma,epic,ranmaEpic.png,FALSE,FALSE,Moderator
+30,Ted,common,tedCommon.png,FALSE,FALSE,Events Team
+31,Ted,rare,tedRare.png,FALSE,FALSE,Seamen Gaming,Events Team
+32,Ted,epic,tedEpic.png,FALSE,FALSE,Seamen Gaming,Events Team
+33,Astral,legendary,astralLegendary.png,FALSE,FALSE,Club Board

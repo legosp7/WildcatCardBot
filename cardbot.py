@@ -18,6 +18,7 @@ intents.message_content = True
 bot = commands.Bot(command_prefix='?',intents=intents)
 SEASON = 'season1' #hardcode this
 rates = {"common":0.60,"rare":0.30,"epic":0.09,"legendary":0.01}
+cooldown = 0
 
 class Card:
     def __init__(self, id, name, rarity, image) -> None:
@@ -63,6 +64,44 @@ class CardTable:
         elif x == 'legendary':
             self._legendary.append(card)
 
+class User:
+    def __init__(self) -> None:
+        self._cards = 0
+        self._cooldown = None
+        #self._rank = None
+        self._description = ''
+    
+class CardPack:
+    def __init__(self,name) -> None:
+        self.packname = name
+        self.cost = 50
+        self._cards = []
+        self._common = []
+        self._rare = []
+        self._epic = []
+        self._legendary = []
+    def get_common(self):
+        return self._common
+    def get_rare(self):
+        return self._rare
+    def get_epic(self):
+        return self._epic
+    def get_legendary(self):
+        return self._legendary
+    def get_cards(self):
+        return self._cards
+    def set_card(self,card):
+        self._cards.append(card)
+        x = card.get_rarity()
+        if x == 'common':
+            self._common.append(card)
+        elif x == 'rare':
+            self._rare.append(card)
+        elif x == 'epic':
+            self._epic.append(card)
+        elif x == 'legendary':
+            self._legendary.append(card)
+
 def retCard(cardtable, id):
     for obj in cardtable.get_common():
         if str(obj.get_id()) == str(id):
@@ -78,6 +117,9 @@ def retCard(cardtable, id):
             return obj
 
 TableofCards = CardTable()
+#need a filler so i can loop later
+cardpackNames = {}
+cardpacks = []
 
 #load cards on startup
 cards = open(f'{SEASON}/cardlist.csv','r+')
@@ -86,51 +128,136 @@ for line in cards:
         line = line.strip().split(',')
         tempCard = Card(line[0],line[1],line[2],line[3])
         TableofCards.set_card(tempCard)
+        for i in line[6:]:
+            i = i.split(' ')
+            i = "".join(i)
+            if i not in cardpackNames:
+                specialcardpack = CardPack(i)
+                specialcardpack.set_card(tempCard)
+                cardpackNames[i] = specialcardpack
+            else:
+                cardpackNames[i].set_card(tempCard)
 
 
+@bot.command()
+async def pullpack(ctx,pack):
+    '''pull 5 cards from a card pack(rare guaranteed!)'''
+    print(pack)
+    pulledcards = []
+    if pack not in cardpackNames:
+        await ctx.send("Please try again with a valid card pack name!")
+    else:
+        fileopen = open(f"usercards/{ctx.message.guild.id}{ctx.author.id}cards.csv",'a')
+        cardraritiespulled = [] #for keeping track of rarity of cards pulled
+        for i in range(5):
+            if i == 4:
+                if "rare" not in cardraritiespulled:
+                    pull = round(random.uniform(0.01,0.40),2)
+                else:
+                    pull = round(random.uniform(0.01,1.00),2)
+            else:
+                pull = round(random.uniform(0.01,1.00),2)
+            print(pull)
+            if pull >= 1.00-rates['common']:
+                pull2 = random.randint(0,len(cardpackNames[pack].get_common())-1)
+                card = cardpackNames[pack].get_common()[pull2]
+                fileopen.write(card.get_id()+"\n")
+                cardraritiespulled.append(card.get_rarity())
+                pulledcards.append(card)
+            elif pull < 1.00-rates['common'] and pull > rates['epic']:
+                pull2 = random.randint(0,len(cardpackNames[pack].get_rare())-1)
+                card = cardpackNames[pack].get_rare()[pull2]
+                fileopen.write(card.get_id()+"\n")
+                cardraritiespulled.append(card.get_rarity())
+                pulledcards.append(card)
+            elif pull <= rates['epic'] and pull > rates['legendary']:
+                pull2 = random.randint(0,len(cardpackNames[pack].get_epic())-1)
+                card = cardpackNames[pack].get_epic()[pull2]
+                fileopen.write(card.get_id()+"\n")
+                cardraritiespulled.append(card.get_rarity())
+                pulledcards.append(card)
+            elif pull == rates['legendary']:
+                pull2 = random.randint(0,len(cardpackNames[pack].get_legendary())-1)
+                card = cardpackNames[pack].get_legendary()[pull2]
+                fileopen.write(card.get_id()+"\n")
+                cardraritiespulled.append(card.get_rarity())
+                pulledcards.append(card)
+        card = pulledcards[0]
+        file = discord.File(f'season1/{card.get_image()}',filename = card.get_image())
+        embed=discord.Embed(title=f"{ctx.message.author.display_name} pulled a {card.get_rarity()} {card.get_name()}!", description="1/5" ,color=0xFF5733)
+        embed.set_image(url = f"attachment://{file.filename}")
+        view = packcardbuttons(pulledcards,ctx.message.author.display_name)
+        await ctx.send(file=file, embed=embed,view = view)
+
+print(cardpackNames)
 #pull a card from the table
 @bot.command()
 async def pullcard(ctx):
     '''
     Pulls a random card!
     '''
-    #create/open server + userid file. we have to initilze it here for some reason
-    fileopen = open(f"usercards/{ctx.message.guild.id}{ctx.author.id}cards.csv",'a')
+    #create server + userid file if it doesn't exist
+    userprofopen = open(f"userprof/{ctx.message.guild.id}{ctx.author.id}profile.csv",'a') #1
+    #create/open server + userid file for cards. we have to initilze it here for some reason
+    fileopen = open(f"usercards/{ctx.message.guild.id}{ctx.author.id}cards.csv",'a') 
     fileopen.close()
     #now we can open
-    readopen = open(f"usercards/{ctx.message.guild.id}{ctx.author.id}cards.csv",'a')
+    cardnumopen = open(f"usercards/{ctx.message.guild.id}{ctx.author.id}cards.csv",'r')
     print(ctx.author.id)
     print("Breakpoint!")
-    pull = round(random.uniform(0.01,1.00),2)
-    print(pull)
-    '''
-    rate error checking
+    cardsnum = len(cardnumopen.readlines())
+    userprofopen.write(str(cardsnum)+"\n") #write cardsnum
+    userprofopen.close() #close 1
+    #i wanted to use readlines() here but you can't on a csv file i guess
+    #this part just shows the number of cards/time for each user
+    userprofopen = open(f"userprof/{ctx.message.guild.id}{ctx.author.id}profile.csv",'r') #2
+    userprofopen.readline()
+    lastrolltime = userprofopen.readline() 
+    print(lastrolltime)
+    timeofroll = time.time()
+    if lastrolltime == '':
+        lastrolltime = time.time()-50000.0
+    userprofopen.close() #3
+    cardnumopen.close()
+    print(timeofroll - float(lastrolltime))
+    if timeofroll - float(lastrolltime) < cooldown:
+        await ctx.send(f"You still have {int(float(lastrolltime)+cooldown - timeofroll)} seconds left before you can roll again!")
+    else:
+        userprofopen = open(f"userprof/{ctx.message.guild.id}{ctx.author.id}profile.csv",'w')
+        userprofopen.write(str(cardsnum)+"\n")
+        userprofopen.write(str(timeofroll)+"\n")
+        userprofopen.close()
+        readopen = open(f"usercards/{ctx.message.guild.id}{ctx.author.id}cards.csv",'a')
+        pull = round(random.uniform(0.01,1.00),2)
+        print(pull)
+        '''
+        rate error checking
 
-    print(1.00-rates['common'])
-    print(rates['rare'])
-    print(rates['epic'])
-    print(rates['legendary'])'''
-    #this'll have to be rewritten eventually for better logic
-    if pull >= 1.00-rates['common']:
-        pull2 = random.randint(0,len(TableofCards.get_common())-1)
-        card = TableofCards.get_common()[pull2]
-        readopen.write(card.get_id()+"\n")
-    elif pull < 1.00-rates['common'] and pull > rates['epic']:
-        pull2 = random.randint(0,len(TableofCards.get_rare())-1)
-        card = TableofCards.get_rare()[pull2]
-        readopen.write(card.get_id()+"\n")
-    elif pull <= rates['epic'] and pull > rates['legendary']:
-        pull2 = random.randint(0,len(TableofCards.get_epic())-1)
-        card = TableofCards.get_epic()[pull2]
-        readopen.write(card.get_id()+"\n")
-    elif pull == rates['legendary']:
-        pull2 = random.randint(0,len(TableofCards.get_legendary())-1)
-        card = TableofCards.get_legendary()[pull2]
-        readopen.write(card.get_id()+"\n")
-    file = discord.File(f'season1/{card.get_image()}',filename = card.get_image())
-    embed=discord.Embed(title=f"{ctx.message.author.display_name} pulled a {card.get_rarity()} {card.get_name()}!", color=0xFF5733)
-    embed.set_image(url = f"attachment://{file.filename}")
-    await ctx.send(file=file, embed=embed)
+        print(1.00-rates['common'])
+        print(rates['rare'])
+        print(rates['epic'])
+        print(rates['legendary'])'''
+        #this'll have to be rewritten eventually for better logic
+        if pull >= 1.00-rates['common']:
+            pull2 = random.randint(0,len(TableofCards.get_common())-1)
+            card = TableofCards.get_common()[pull2]
+            readopen.write(card.get_id()+"\n")
+        elif pull < 1.00-rates['common'] and pull > rates['epic']:
+            pull2 = random.randint(0,len(TableofCards.get_rare())-1)
+            card = TableofCards.get_rare()[pull2]
+            readopen.write(card.get_id()+"\n")
+        elif pull <= rates['epic'] and pull > rates['legendary']:
+            pull2 = random.randint(0,len(TableofCards.get_epic())-1)
+            card = TableofCards.get_epic()[pull2]
+            readopen.write(card.get_id()+"\n")
+        elif pull == rates['legendary']:
+            pull2 = random.randint(0,len(TableofCards.get_legendary())-1)
+            card = TableofCards.get_legendary()[pull2]
+            readopen.write(card.get_id()+"\n")
+        file = discord.File(f'season1/{card.get_image()}',filename = card.get_image())
+        embed=discord.Embed(title=f"{ctx.message.author.display_name} pulled a {card.get_rarity()} {card.get_name()}!", color=0xFF5733)
+        embed.set_image(url = f"attachment://{file.filename}")
+        await ctx.send(file=file, embed=embed)
 
 @bot.command()
 async def collection(ctx):
@@ -207,13 +334,18 @@ async def pcardlist(ctx,sort=''):
         await ctx.send(file=file,embed=embed,view=view)
     else:
         await ctx.send("Please enter a valid argument! (ID)")
-    '''elif sort.lower() == "rarity":
-        page = 0
-        for card in TableofCards.get_cards():
-                strs[card.get_rarity()] += (f'{card.get_name()}\n')
-        embed.add_field(name=rarities[page], value=strs[rarities[page].lower()], inline=False)
-        view = NextMenuCardList()
-        await ctx.reply(embed=embed,view=view)'''
+
+@bot.command()
+async def profile(ctx):
+    userprofopen = open(f"userprof/{ctx.message.guild.id}{ctx.author.id}profile.csv",'r')
+    cardnum = userprofopen.readline()
+    embed=discord.Embed(color=0xFF5733)
+    avatar = ctx.author.display_avatar.url
+    embed.set_author(name = f"{ctx.author.display_name}'s Profile!",icon_url=avatar)
+    embed.set_thumbnail(url=avatar)
+    embed.add_field(name = "Cards",value = cardnum.strip(),inline=False)
+    userprofopen.close()
+    await ctx.send(embed=embed)
 
 
 #button classes
@@ -288,6 +420,52 @@ class pcardlistbuttons(discord.ui.View):
         file = retembed[0]
         await interaction.response.edit_message(embed=embed,attachments=[file])
 
+class packcardbuttons(discord.ui.View):
+    def __init__(self,pulledcards,author):
+        super().__init__()
+        self.value = None
+        self.page = 0
+        self.pulledcards = pulledcards
+        self.author = author
+    
+    def makeEmbed(self):
+        card = self.pulledcards[self.page]
+        embed=discord.Embed(title=f"{self.author} pulled a {card.get_rarity()} {card.get_name()}!", description = f"{self.page+1}/5",color=0xFF5733)
+        file = discord.File(f'season1/{card.get_image()}',filename = card.get_image())
+        embed.set_image(url = f"attachment://{file.filename}")
+        return (file,embed)
+
+    @discord.ui.button(label='Previous',style=discord.ButtonStyle.grey)
+    async def previous(self,interaction:discord.Interaction,button:discord.ui.Button):
+        if self.page <= 0:
+            self.page = 4
+        else:
+            self.page -=1
+        retembed = self.makeEmbed()
+        embed = retembed[1]
+        file = retembed[0]
+        await interaction.response.edit_message(embed=embed,attachments=[file])
+    
+    @discord.ui.button(label='Next',style=discord.ButtonStyle.grey)
+    async def next(self,interaction:discord.Interaction,button:discord.ui.Button):
+        if self.page >= 4:
+            self.page = 0
+        else:
+            self.page +=1
+        retembed = self.makeEmbed()
+        embed = retembed[1]
+        file = retembed[0]
+        await interaction.response.edit_message(embed=embed,attachments=[file])
+
+@bot.command()
+async def packlist(ctx):
+    '''displays all card packs!'''
+    strembed = ""
+    for key in cardpackNames:
+        strembed += (key+"\n")
+    embed=discord.Embed(title = "Available Card Packs",description = strembed,color=0xFF5733)
+    await ctx.send(embed=embed)
+        
     
 '''
 @bot.command()
