@@ -21,11 +21,13 @@ rates = {"common":0.60,"rare":0.30,"epic":0.09,"legendary":0.01}
 cooldown = 0
 
 class Card:
-    def __init__(self, id, name, rarity, image) -> None:
+    def __init__(self, id, name, rarity, image,description,packs) -> None:
         self._id = id
         self._name = name
         self._rarity = rarity
         self._image = image
+        self._description = description
+        self._packs = packs
     def get_name(self):
         return self._name
     def get_rarity(self):
@@ -34,6 +36,10 @@ class Card:
         return self._image
     def get_id(self):
         return self._id
+    def get_description(self):
+        return self._description
+    def get_packs(self):
+        return self._packs
 
 class CardTable:
     def __init__(self) -> None:
@@ -103,6 +109,7 @@ class CardPack:
             self._legendary.append(card)
 
 def retCard(cardtable, id):
+    '''returns card object'''
     for obj in cardtable.get_common():
         if str(obj.get_id()) == str(id):
             return obj
@@ -126,17 +133,17 @@ cards = open(f'{SEASON}/cardlist.csv','r+')
 for line in cards:
     if line[0] != "#":
         line = line.strip().split(',')
-        tempCard = Card(line[0],line[1],line[2],line[3])
+        tempCard = Card(line[0],line[1],line[2],line[3],line[6],line[7:])
         TableofCards.set_card(tempCard)
-        for i in line[6:]:
-            i = i.split(' ')
-            i = "".join(i)
-            if i not in cardpackNames:
+        for i in line[7:]: #change this as we add more stuff like descriptions
+            packname = i.split(' ')
+            packname = "".join(packname)
+            if packname not in cardpackNames:
                 specialcardpack = CardPack(i)
                 specialcardpack.set_card(tempCard)
-                cardpackNames[i] = specialcardpack
+                cardpackNames[packname] = specialcardpack
             else:
-                cardpackNames[i].set_card(tempCard)
+                cardpackNames[packname].set_card(tempCard)
 
 
 @bot.command()
@@ -189,7 +196,7 @@ async def pullpack(ctx,pack):
         view = packcardbuttons(pulledcards,ctx.message.author.display_name)
         await ctx.send(file=file, embed=embed,view = view)
 
-print(cardpackNames)
+
 #pull a card from the table
 @bot.command()
 async def pullcard(ctx):
@@ -293,6 +300,48 @@ async def collection(ctx):
     except:
         await ctx.send("You have no cards! Pull one to start your collection!")
 
+#implement pcollection here with arg for rarity/id
+@bot.command()
+async def pcollection(ctx,type=''):
+    '''view your collection with pictures!'''
+    rarities = ["legendary","epic","rare","common"]
+    authorcardstodisplay = []
+    idlist = []
+    if type.lower() not in rarities and type.lower() != "id":
+        await ctx.send("Please enter a valid type! (Common/Rare/Epic/Legendary/ID)")
+    else:
+        try:
+            fileopen = open(f"usercards/{ctx.message.guild.id}{ctx.author.id}cards.csv",'r')
+            for line in fileopen:
+                cardname = retCard(TableofCards,line.strip())
+                if type.lower() in rarities:
+                    if cardname.get_rarity() == type.lower():
+                        authorcardstodisplay.append(cardname)
+                elif type.lower() == "id":
+                    idlist.append(int(line.strip()))
+                    idlist.sort() #change this later so it's not O(n) time. it might not matter anyway
+            for id in idlist:
+                authorcardstodisplay.append(retCard(TableofCards,str(id)))
+            if len(authorcardstodisplay) == 0:
+                await ctx.send("You have no cards of this type!")
+            else:
+                embed=discord.Embed(color=0xFF5733)
+                avatar = ctx.author.display_avatar.url
+                if type.lower() in rarities:
+                    embed.set_author(name = f"{ctx.author.display_name}'s {type.lower()} Collection!",icon_url=avatar)
+                elif type == "id":
+                    embed.set_author(name = f"{ctx.author.display_name}'s Collection by ID",icon_url=avatar)
+                strs = {'common':'','rare':'','epic':'','legendary':''}
+                #REDO THIS TOO
+                card = authorcardstodisplay[0]
+                file = discord.File(f'season1/{card.get_image()}',filename = card.get_image())
+                embed.set_image(url = f"attachment://{file.filename}")
+                embed.set_footer(text = f"Page 1/{len(authorcardstodisplay)}")
+                view = pcollectionbuttons(authorcardstodisplay,type.lower(),ctx.author)
+                await ctx.send(file=file,embed=embed,view=view)
+        except:
+            await ctx.send("You have no cards! Pull one to start your collection!")
+
 @bot.command()
 async def cardlist(ctx,sort=''):
     '''
@@ -337,6 +386,7 @@ async def pcardlist(ctx,sort=''):
 
 @bot.command()
 async def profile(ctx):
+    '''display your profile'''
     userprofopen = open(f"userprof/{ctx.message.guild.id}{ctx.author.id}profile.csv",'r')
     cardnum = userprofopen.readline()
     embed=discord.Embed(color=0xFF5733)
@@ -346,6 +396,48 @@ async def profile(ctx):
     embed.add_field(name = "Cards",value = cardnum.strip(),inline=False)
     userprofopen.close()
     await ctx.send(embed=embed)
+
+@bot.command()
+async def packlist(ctx):
+    '''displays all card packs!'''
+    strembed = ""
+    for key in cardpackNames:
+        strembed += (key+"\n")
+    embed=discord.Embed(title = "Available Card Packs",description = strembed,color=0xFF5733)
+    await ctx.send(embed=embed)
+        
+@bot.command()
+async def packdisplay(ctx,pack=''):
+    '''display all cards in a card pack!'''
+    if pack not in cardpackNames:
+        await ctx.send("Try again with a valid pack name!")
+    else:
+        namestring = ""
+        for card in cardpackNames[pack].get_cards():
+            namestring += (card.get_name() + " (" + card.get_rarity() + ")\n")
+        embed = discord.Embed(title = cardpackNames[pack].packname, description = namestring, color=0xFF5733)
+        await ctx.send(embed=embed)
+
+
+#implement by name later, have it so that it gives a menu when you do by name
+@bot.command()
+async def carddisplay(ctx,scmd=''):
+    '''display a card!'''
+    found = False
+    for card in TableofCards.get_cards():
+        if card.get_id() == scmd:
+            found = True
+            embed = discord.Embed(title = card.get_name(), color = 0xFF5733)
+            file = discord.File(f'season1/{card.get_image()}',filename = card.get_image())
+            embed.set_thumbnail(url=f"attachment://{file.filename}")
+            embed.add_field(name = "Rarity",value=card.get_rarity(),inline=False)
+            embed.add_field(name = "ID",value=card.get_id(),inline=False)
+            embed.add_field(name = "Description",value=card.get_description(),inline=False)
+            if card.get_packs() != []:
+                embed.add_field(name = "Part of These Packs",value="\n".join(card.get_packs()),inline = False)
+            await ctx.send(embed=embed,file=file)
+    if found == False:
+        await ctx.send("Please enter a valid ID!")
 
 
 #button classes
@@ -457,15 +549,48 @@ class packcardbuttons(discord.ui.View):
         file = retembed[0]
         await interaction.response.edit_message(embed=embed,attachments=[file])
 
-@bot.command()
-async def packlist(ctx):
-    '''displays all card packs!'''
-    strembed = ""
-    for key in cardpackNames:
-        strembed += (key+"\n")
-    embed=discord.Embed(title = "Available Card Packs",description = strembed,color=0xFF5733)
-    await ctx.send(embed=embed)
-        
+class pcollectionbuttons(discord.ui.View):
+    def __init__(self,cards,type,author):
+        super().__init__()
+        self.value = None
+        self.cards = cards
+        self.cardnum = 0
+        self.type = type
+        self.author = author
+    
+    def makeEmbed(self):
+        card = self.cards[self.cardnum]
+        embed=discord.Embed(title = f'{card.get_name()} ({card.get_rarity()})', color=0xFF5733)
+        if self.type == "id":
+            embed.set_author(name = f"{self.author.display_name}'s Collection by ID",icon_url=self.author.display_avatar.url)
+        else:
+            embed.set_author(name = f"{self.author.display_name}'s {self.type} Collection!",icon_url=self.author.display_avatar.url)
+        file = discord.File(f'season1/{card.get_image()}',filename = card.get_image())
+        embed.set_image(url = f"attachment://{file.filename}")
+        embed.set_footer(text = f"Page {self.cardnum + 1}/{len(self.cards)}")
+        return (file,embed)
+
+    @discord.ui.button(label='Previous',style=discord.ButtonStyle.grey)
+    async def previous(self,interaction:discord.Interaction,button:discord.ui.Button):
+        if self.cardnum <= 0:
+            self.cardnum = len(self.cards)-1
+        else:
+            self.cardnum -=1
+        retembed = self.makeEmbed()
+        embed = retembed[1]
+        file = retembed[0]
+        await interaction.response.edit_message(embed=embed,attachments=[file])
+    
+    @discord.ui.button(label='Next',style=discord.ButtonStyle.grey)
+    async def next(self,interaction:discord.Interaction,button:discord.ui.Button):
+        if self.cardnum >= len(self.cards)-1:
+            self.cardnum = 0
+        else:
+            self.cardnum +=1
+        retembed = self.makeEmbed()
+        embed = retembed[1]
+        file = retembed[0]
+        await interaction.response.edit_message(embed=embed,attachments=[file])
     
 '''
 @bot.command()
