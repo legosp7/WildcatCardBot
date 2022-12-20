@@ -619,6 +619,8 @@ async def profile(ctx):
             proflist.append(0)
         if len(proflist) < 4:
             proflist.append("You have no packs! Use ?buy to purchase one!")
+        if proflist[3] == "":
+            proflist[3] = "You have no packs! Use ?buy to purchase one!"
         embed=discord.Embed(color=0xFF5733)
         avatar = ctx.author.display_avatar.url
         embed.set_author(name = f"{ctx.author.display_name}'s Profile!",icon_url=avatar)
