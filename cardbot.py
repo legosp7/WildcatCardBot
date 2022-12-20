@@ -18,6 +18,8 @@ intents.message_content = True
 bot = commands.Bot(command_prefix='?',intents=intents)
 SEASON = 'season1' #hardcode this
 rates = {"common":0.60,"rare":0.30,"epic":0.09,"legendary":0.01}
+cardvalues = {"common":10,"rare":25,"epic":50,"legendary":100}
+packprices = {"Common Pack":40,"Rare Pack":100,"Epic Pack":200,"Legendary Pack":400}
 cooldown = 0
 
 class Card:
@@ -146,57 +148,6 @@ for line in cards:
                 cardpackNames[packname].set_card(tempCard)
 
 
-@bot.command()
-async def pullpack(ctx,pack):
-    '''pull 5 cards from a card pack(rare guaranteed!)'''
-    print(pack)
-    pulledcards = []
-    if pack not in cardpackNames:
-        await ctx.send("Please try again with a valid card pack name!")
-    else:
-        fileopen = open(f"usercards/{ctx.message.guild.id}{ctx.author.id}cards.csv",'a')
-        cardraritiespulled = [] #for keeping track of rarity of cards pulled
-        for i in range(5):
-            if i == 4:
-                if "rare" not in cardraritiespulled:
-                    pull = round(random.uniform(0.01,0.40),2)
-                else:
-                    pull = round(random.uniform(0.01,1.00),2)
-            else:
-                pull = round(random.uniform(0.01,1.00),2)
-            print(pull)
-            if pull >= 1.00-rates['common']:
-                pull2 = random.randint(0,len(cardpackNames[pack].get_common())-1)
-                card = cardpackNames[pack].get_common()[pull2]
-                fileopen.write(card.get_id()+"\n")
-                cardraritiespulled.append(card.get_rarity())
-                pulledcards.append(card)
-            elif pull < 1.00-rates['common'] and pull > rates['epic']:
-                pull2 = random.randint(0,len(cardpackNames[pack].get_rare())-1)
-                card = cardpackNames[pack].get_rare()[pull2]
-                fileopen.write(card.get_id()+"\n")
-                cardraritiespulled.append(card.get_rarity())
-                pulledcards.append(card)
-            elif pull <= rates['epic'] and pull > rates['legendary']:
-                pull2 = random.randint(0,len(cardpackNames[pack].get_epic())-1)
-                card = cardpackNames[pack].get_epic()[pull2]
-                fileopen.write(card.get_id()+"\n")
-                cardraritiespulled.append(card.get_rarity())
-                pulledcards.append(card)
-            elif pull == rates['legendary']:
-                pull2 = random.randint(0,len(cardpackNames[pack].get_legendary())-1)
-                card = cardpackNames[pack].get_legendary()[pull2]
-                fileopen.write(card.get_id()+"\n")
-                cardraritiespulled.append(card.get_rarity())
-                pulledcards.append(card)
-        card = pulledcards[0]
-        file = discord.File(f'season1/{card.get_image()}',filename = card.get_image())
-        embed=discord.Embed(title=f"{ctx.message.author.display_name} pulled a {card.get_rarity()} {card.get_name()}!", description="1/5" ,color=0xFF5733)
-        embed.set_image(url = f"attachment://{file.filename}")
-        view = packcardbuttons(pulledcards,ctx.message.author.display_name)
-        await ctx.send(file=file, embed=embed,view = view)
-
-
 #pull a card from the table
 @bot.command()
 async def pullcard(ctx):
@@ -266,6 +217,280 @@ async def pullcard(ctx):
         embed.set_image(url = f"attachment://{file.filename}")
         await ctx.send(file=file, embed=embed)
 
+
+
+#gonna have to slim this function down later, prob break into different functions
+@bot.command()
+async def openpack(ctx,pack=''):
+    '''pull from a pack (rarity)'''
+    if pack == "":
+        await ctx.send("Please enter a pack!")
+        return
+    try:
+        userprofopen = open(f"userprof/{ctx.message.guild.id}{ctx.author.id}profile.csv",'r')
+        proflist = []
+        for line in userprofopen:
+            proflist.append(line.strip())
+        print(proflist)
+        print(pack)
+        pulledcards = []
+        rarities = ["legendary","epic","rare","common"]
+        if pack.lower() not in rarities:
+            await ctx.send("Please try again with a valid card pack!")
+            userprofopen.close()
+        elif len(proflist) < 4:
+            await ctx.send("You have no packs! Use ?buypack to purchase one!")
+            userprofopen.close()
+        else:
+            packs = proflist[3].split(',')
+            print(packs)
+            if pack.lower() in packs:
+                fileopen = open(f"usercards/{ctx.message.guild.id}{ctx.author.id}cards.csv",'a')
+                cardraritiespulled = [] #for keeping track of rarity of cards pulled
+                packs.remove(pack.lower())
+                if pack.lower() == "legendary":
+                    pull2 = random.randint(0,len(TableofCards.get_legendary())-1)
+                    card = TableofCards.get_legendary()[pull2]
+                    fileopen.write(card.get_id()+"\n")
+                    cardraritiespulled.append(card.get_rarity())
+                    pulledcards.append(card)
+                    card = pulledcards[0]
+                    file = discord.File(f'season1/{card.get_image()}',filename = card.get_image())
+                    embed=discord.Embed(title=f"{ctx.message.author.display_name} pulled a {card.get_rarity()} {card.get_name()}!",color=0xFF5733)
+                    embed.set_image(url = f"attachment://{file.filename}")
+                    await ctx.send(file=file, embed=embed)
+                else:
+                    for i in range(5):
+                        #guarantees
+                        if i == 4 and (pack.lower() == "rare"):
+                            if "rare" not in cardraritiespulled:
+                                pull = round(random.uniform(0.01,0.40),2)
+                            else:
+                                pull = round(random.uniform(0.01,1.00),2)
+                        elif i == 4 and (pack.lower() == "epic"):
+                            if "rare" not in cardraritiespulled:
+                                pull = round(random.uniform(0.01,0.09),2)
+                            else:
+                                pull = round(random.uniform(0.01,1.00),2)
+                        else:
+                            pull = round(random.uniform(0.01,1.00),2)
+                        print(pull)
+                        if pull >= 1.00-rates['common']:
+                            pull2 = random.randint(0,len(TableofCards.get_common())-1)
+                            card = TableofCards.get_common()[pull2]
+                            fileopen.write(card.get_id()+"\n")
+                            cardraritiespulled.append(card.get_rarity())
+                            pulledcards.append(card)
+                        elif pull < 1.00-rates['common'] and pull > rates['epic']:
+                            pull2 = random.randint(0,len(TableofCards.get_rare())-1)
+                            card = TableofCards.get_rare()[pull2]
+                            fileopen.write(card.get_id()+"\n")
+                            cardraritiespulled.append(card.get_rarity())
+                            pulledcards.append(card)
+                        elif pull <= rates['epic'] and pull > rates['legendary']:
+                            pull2 = random.randint(0,len(TableofCards.get_epic())-1)
+                            card = TableofCards.get_epic()[pull2]
+                            fileopen.write(card.get_id()+"\n")
+                            cardraritiespulled.append(card.get_rarity())
+                            pulledcards.append(card)
+                        elif pull == rates['legendary']:
+                            pull2 = random.randint(0,len(TableofCards.get_legendary())-1)
+                            card = TableofCards.get_legendary()[pull2]
+                            fileopen.write(card.get_id()+"\n")
+                            cardraritiespulled.append(card.get_rarity())
+                            pulledcards.append(card)
+                    card = pulledcards[0]
+                    file = discord.File(f'season1/{card.get_image()}',filename = card.get_image())
+                    embed=discord.Embed(title=f"{ctx.message.author.display_name} pulled a {card.get_rarity()} {card.get_name()}!", description="1/5" ,color=0xFF5733)
+                    embed.set_image(url = f"attachment://{file.filename}")
+                    view = packcardbuttons(pulledcards,ctx.message.author.display_name)
+                    await ctx.send(file=file, embed=embed,view = view)
+                userprofopen.close() 
+                userprofwrite = open(f"userprof/{ctx.message.guild.id}{ctx.author.id}profile.csv",'w')
+                for line in proflist[:3]: #change as prof changes - packs should be last
+                    userprofwrite.write(line + "\n")
+                userprofwrite.write(",".join(packs) + "\n")
+                userprofwrite.close()
+            else:
+                await ctx.send("You don't own this pack!")
+                userprofopen.close()
+    except FileNotFoundError:
+        await ctx.send("You don't have a profile! Use ?pullcard to get started!")    
+
+@bot.command()
+async def pullcollection(ctx,pack):
+    '''pull 5 cards from a collection(rare guaranteed!)'''
+    print(pack)
+    pulledcards = []
+    if pack not in cardpackNames:
+        await ctx.send("Please try again with a valid card pack name!")
+    else:
+        fileopen = open(f"usercards/{ctx.message.guild.id}{ctx.author.id}cards.csv",'a')
+        cardraritiespulled = [] #for keeping track of rarity of cards pulled
+        for i in range(5):
+            if i == 4:
+                if "rare" not in cardraritiespulled:
+                    pull = round(random.uniform(0.01,0.40),2)
+                else:
+                    pull = round(random.uniform(0.01,1.00),2)
+            else:
+                pull = round(random.uniform(0.01,1.00),2)
+            print(pull)
+            if pull >= 1.00-rates['common']:
+                pull2 = random.randint(0,len(cardpackNames[pack].get_common())-1)
+                card = cardpackNames[pack].get_common()[pull2]
+                fileopen.write(card.get_id()+"\n")
+                cardraritiespulled.append(card.get_rarity())
+                pulledcards.append(card)
+            elif pull < 1.00-rates['common'] and pull > rates['epic']:
+                pull2 = random.randint(0,len(cardpackNames[pack].get_rare())-1)
+                card = cardpackNames[pack].get_rare()[pull2]
+                fileopen.write(card.get_id()+"\n")
+                cardraritiespulled.append(card.get_rarity())
+                pulledcards.append(card)
+            elif pull <= rates['epic'] and pull > rates['legendary']:
+                pull2 = random.randint(0,len(cardpackNames[pack].get_epic())-1)
+                card = cardpackNames[pack].get_epic()[pull2]
+                fileopen.write(card.get_id()+"\n")
+                cardraritiespulled.append(card.get_rarity())
+                pulledcards.append(card)
+            elif pull == rates['legendary']:
+                pull2 = random.randint(0,len(cardpackNames[pack].get_legendary())-1)
+                card = cardpackNames[pack].get_legendary()[pull2]
+                fileopen.write(card.get_id()+"\n")
+                cardraritiespulled.append(card.get_rarity())
+                pulledcards.append(card)
+        card = pulledcards[0]
+        file = discord.File(f'season1/{card.get_image()}',filename = card.get_image())
+        embed=discord.Embed(title=f"{ctx.message.author.display_name} pulled a {card.get_rarity()} {card.get_name()}!", description="1/5" ,color=0xFF5733)
+        embed.set_image(url = f"attachment://{file.filename}")
+        view = packcardbuttons(pulledcards,ctx.message.author.display_name)
+        await ctx.send(file=file, embed=embed,view = view)
+
+
+@bot.command()
+async def sell(ctx,id=""):
+    '''Sell a card!'''
+    if id == '':
+        await ctx.send("Please enter a valid card ID!")
+        return
+    try:
+        fileopen = open(f"usercards/{ctx.message.guild.id}{ctx.author.id}cards.csv",'r')
+        cardsid = []
+        cardscollection = []
+        for line in fileopen:
+            cardname = retCard(TableofCards,line.strip())
+            cardsid.append(line.strip())
+            cardscollection.append(cardname)
+        fileopen.close()
+        if id in cardsid:
+            index = cardsid.index(id)
+            cardsid.pop(index)
+            cardsold = cardscollection.pop(index)
+            fileopen = open(f"usercards/{ctx.message.guild.id}{ctx.author.id}cards.csv",'w')
+            for ci in cardsid:
+                fileopen.write(ci + "\n")
+            fileopen.close()
+            value = cardvalues[cardsold.get_rarity()]
+            try:
+                userprofopen = open(f"userprof/{ctx.message.guild.id}{ctx.author.id}profile.csv",'r')
+                proflist = []
+                for line in userprofopen:
+                    proflist.append(line.strip())
+                if len(proflist) < 3:
+                    proflist.append(0)
+                print(proflist)
+                userprofopen.close()
+                userprofwrite = open(f"userprof/{ctx.message.guild.id}{ctx.author.id}profile.csv",'w')
+                proflist[2] = int(proflist[2]) + value
+                for line in proflist: #change as prof changes - packs should be last
+                    userprofwrite.write(str(line) + "\n")
+                userprofwrite.close()
+                await ctx.send(f"You have sold {cardsold.get_name()} for {value} gold!")
+            except FileNotFoundError:
+                await ctx.send("We don't have your profile! Use ?pullcard to start!")
+        else:
+            await ctx.send("You don't own this card!")
+    except FileNotFoundError:
+        await ctx.send("You have no cards! Pull one to start your collection!")
+
+@bot.command()
+async def buy(ctx):
+    '''Buy a pack!'''
+    try:
+        userprofopen = open(f"userprof/{ctx.message.guild.id}{ctx.author.id}profile.csv",'r')
+        proflist = []
+        for line in userprofopen:
+            proflist.append(line.strip())
+        if len(proflist) < 3:
+            proflist.append(0)
+        userprofopen.close()
+        embed = discord.Embed(title = "Pack Shop!", description= "Buy a card pack!", color = 0xFF5733)
+        pricesstr = ''
+        i = 1 #index for number
+        for k,v in packprices.items():
+            pricesstr += f'{i}. {k} - {v}\n'
+            i += 1
+        pricesstr += "5. Exit"
+        embed.add_field(name = "Prices", value = pricesstr, inline=False)
+        await ctx.send(embed=embed)
+        def checkvalid(msg):
+            return msg.author == ctx.author and msg.channel == ctx.channel
+        packreply = await bot.wait_for("message", check=checkvalid)
+        pack = packreply.content
+        boughtpack = ''
+        if len(proflist) < 4:
+            packlist = []
+        else:
+            packlist = proflist[3].split(',')
+        if pack == "5":
+            await ctx.send("Thank you for your patronage!")
+            return
+        elif pack == "1":
+            if int(proflist[2]) >= packprices["Common Pack"]:
+                proflist[2] = int(proflist[2]) - packprices["Common Pack"]
+                packlist.append("common")
+                boughtpack = "Common Pack"
+            else:
+                await ctx.send("You don't have enough gold!")
+                return
+        elif pack == "2":
+            if int(proflist[2]) >= packprices["Rare Pack"]:
+                proflist[2] = int(proflist[2]) - packprices["Rare Pack"]
+                packlist.append("rare")
+                boughtpack = "Rare Pack"
+            else:
+                await ctx.send("You don't have enough gold!")
+                return
+        elif pack == "3":
+            if int(proflist[2]) >= packprices["Epic Pack"]:
+                proflist[2] = int(proflist[2]) - packprices["Epic Pack"]
+                packlist.append("epic")
+                boughtpack = "Epic Pack"
+            else:
+                await ctx.send("You don't have enough gold!")
+                return
+        elif pack == "4":
+            if int(proflist[2]) >= packprices["Legendary Pack"]:
+                proflist[2] = int(proflist[2]) - packprices["Legendary Pack"]
+                packlist.append("legendary")
+                boughtpack = "Legendary Pack"
+            else:
+                await ctx.send("You don't have enough gold!")
+                return
+        else: #can change this later to let user try again automatically
+            await ctx.send("Please try again with a valid pack!")
+            return
+        userprofwrite = open(f"userprof/{ctx.message.guild.id}{ctx.author.id}profile.csv",'w')
+        for line in proflist[:3]: #change as prof changes - packs should be last
+            userprofwrite.write(str(line) + "\n")
+        userprofwrite.write(",".join(packlist))
+        userprofwrite.close()
+        await ctx.send(f"You bought a {boughtpack}! Thank you for your patronage!")
+        return
+    except FileNotFoundError:
+        await ctx.send("We don't have your profile! Use ?pullcard to start!")
+
 @bot.command()
 async def collection(ctx):
     '''
@@ -289,10 +514,8 @@ async def collection(ctx):
         avatar = ctx.author.display_avatar.url
         embed.set_author(name = f"{ctx.author.display_name}'s Collection!",icon_url=avatar)
         strs = {'common':'','rare':'','epic':'','legendary':''}
-        #REDO THIS TOO
         for card in authorcardcount:
                 strs[card.get_rarity()] += (f'{card.get_name()}     x{authorcardcount[card]}\n')
-        #REDO THIS PART LATER SO IT ISN'T SO SCUFFED
         for rarity in rarities:
             if strs[rarity.lower()] != '':
                 embed.add_field(name=rarity, value=strs[rarity.lower()], inline=False)
@@ -387,15 +610,26 @@ async def pcardlist(ctx,sort=''):
 @bot.command()
 async def profile(ctx):
     '''display your profile'''
-    userprofopen = open(f"userprof/{ctx.message.guild.id}{ctx.author.id}profile.csv",'r')
-    cardnum = userprofopen.readline()
-    embed=discord.Embed(color=0xFF5733)
-    avatar = ctx.author.display_avatar.url
-    embed.set_author(name = f"{ctx.author.display_name}'s Profile!",icon_url=avatar)
-    embed.set_thumbnail(url=avatar)
-    embed.add_field(name = "Cards",value = cardnum.strip(),inline=False)
-    userprofopen.close()
-    await ctx.send(embed=embed)
+    try:
+        userprofopen = open(f"userprof/{ctx.message.guild.id}{ctx.author.id}profile.csv",'r')
+        proflist = []
+        for lin in userprofopen:
+            proflist.append(lin.strip())
+        if len(proflist) < 3:
+            proflist.append(0)
+        if len(proflist) < 4:
+            proflist.append("You have no packs! Use ?buy to purchase one!")
+        embed=discord.Embed(color=0xFF5733)
+        avatar = ctx.author.display_avatar.url
+        embed.set_author(name = f"{ctx.author.display_name}'s Profile!",icon_url=avatar)
+        embed.set_thumbnail(url=avatar)
+        embed.add_field(name = "Cards",value = proflist[0],inline=False)
+        embed.add_field(name = "Gold",value = proflist[2],inline=False)
+        embed.add_field(name = "Packs",value = proflist[3],inline=False)
+        userprofopen.close()
+        await ctx.send(embed=embed)
+    except FileNotFoundError:
+        await ctx.send("We don't have your profile! Use ?pullcard to start!")
 
 @bot.command()
 async def packlist(ctx):
@@ -422,7 +656,8 @@ async def packdisplay(ctx,pack=''):
 #implement by name later, have it so that it gives a menu when you do by name
 @bot.command()
 async def carddisplay(ctx,scmd=''):
-    '''display a card!'''
+    '''display a card!
+    '''
     found = False
     for card in TableofCards.get_cards():
         if card.get_id() == scmd:
