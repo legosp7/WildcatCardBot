@@ -20,7 +20,7 @@ SEASON = 'season1' #hardcode this
 rates = {"common":0.60,"rare":0.30,"epic":0.09,"legendary":0.01}
 cardvalues = {"common":10,"rare":25,"epic":50,"legendary":100}
 packprices = {"Common Pack":40,"Rare Pack":100,"Epic Pack":200,"Legendary Pack":400}
-cooldown = 0
+cooldown = 60
 
 class Card:
     def __init__(self, id, name, rarity, image,description,packs) -> None:
