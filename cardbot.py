@@ -156,35 +156,33 @@ async def pullcard(ctx):
     '''
     #create server + userid file if it doesn't exist
     userprofopen = open(f"userprof/{ctx.message.guild.id}{ctx.author.id}profile.csv",'a') #1
+    userprofopen.close()
     #create/open server + userid file for cards. we have to initilze it here for some reason
     fileopen = open(f"usercards/{ctx.message.guild.id}{ctx.author.id}cards.csv",'a') 
     fileopen.close()
     #now we can open
     cardnumopen = open(f"usercards/{ctx.message.guild.id}{ctx.author.id}cards.csv",'r')
-    print(ctx.author.id)
-    print("Breakpoint!")
+    userprofopen = open(f"userprof/{ctx.message.guild.id}{ctx.author.id}profile.csv",'r')
     cardsnum = len(cardnumopen.readlines())
-    userprofopen.write(str(cardsnum)+"\n") #write cardsnum
+    proflist = []
+    for line in userprofopen:
+         proflist.append(line.strip())
     userprofopen.close() #close 1
-    #i wanted to use readlines() here but you can't on a csv file i guess
-    #this part just shows the number of cards/time for each user
-    userprofopen = open(f"userprof/{ctx.message.guild.id}{ctx.author.id}profile.csv",'r') #2
-    userprofopen.readline()
-    lastrolltime = userprofopen.readline() 
-    print(lastrolltime)
+    if len(proflist) < 2:
+        proflist.append(cardsnum)
+        proflist.append(time.time()-50000.0)
+        proflist.append("0")
     timeofroll = time.time()
-    if lastrolltime == '':
-        lastrolltime = time.time()-50000.0
-    userprofopen.close() #3
     cardnumopen.close()
-    print(timeofroll - float(lastrolltime))
-    if timeofroll - float(lastrolltime) < cooldown:
-        await ctx.send(f"You still have {int(float(lastrolltime)+cooldown - timeofroll)} seconds left before you can roll again!")
+    print(timeofroll - float(proflist[1]))
+    if timeofroll - float(proflist[1]) < cooldown:
+        await ctx.send(f"You still have {int(float(proflist[1])+cooldown - timeofroll)} seconds left before you can roll again!")
     else:
         userprofopen = open(f"userprof/{ctx.message.guild.id}{ctx.author.id}profile.csv",'w')
-        userprofopen.write(str(cardsnum)+"\n")
-        userprofopen.write(str(timeofroll)+"\n")
-        userprofopen.close()
+        proflist[1] = timeofroll
+        proflist[0] = int(proflist[0]) + 1
+        for line in proflist:
+            userprofopen.write(str(line) + "\n")
         readopen = open(f"usercards/{ctx.message.guild.id}{ctx.author.id}cards.csv",'a')
         pull = round(random.uniform(0.01,1.00),2)
         print(pull)
@@ -215,6 +213,7 @@ async def pullcard(ctx):
         file = discord.File(f'season1/{card.get_image()}',filename = card.get_image())
         embed=discord.Embed(title=f"{ctx.message.author.display_name} pulled a {card.get_rarity()} {card.get_name()}!", color=0xFF5733)
         embed.set_image(url = f"attachment://{file.filename}")
+        readopen.close()
         await ctx.send(file=file, embed=embed)
 
 
@@ -268,7 +267,7 @@ async def openpack(ctx,pack=''):
                             else:
                                 pull = round(random.uniform(0.01,1.00),2)
                         elif i == 4 and (pack.lower() == "epic"):
-                            if "rare" not in cardraritiespulled:
+                            if "epic" not in cardraritiespulled:
                                 pull = round(random.uniform(0.01,0.09),2)
                             else:
                                 pull = round(random.uniform(0.01,1.00),2)
@@ -307,8 +306,12 @@ async def openpack(ctx,pack=''):
                     await ctx.send(file=file, embed=embed,view = view)
                 userprofopen.close() 
                 userprofwrite = open(f"userprof/{ctx.message.guild.id}{ctx.author.id}profile.csv",'w')
+                if pack.lower() == "legendary":
+                    proflist[0] = int(proflist[0]) + 1
+                else: 
+                    proflist[0] = int(proflist[0]) + 5
                 for line in proflist[:3]: #change as prof changes - packs should be last
-                    userprofwrite.write(line + "\n")
+                    userprofwrite.write(str(line) + "\n")
                 userprofwrite.write(",".join(packs) + "\n")
                 userprofwrite.close()
             else:
@@ -383,16 +386,66 @@ async def sell(ctx,id=""):
             cardsid.append(line.strip())
             cardscollection.append(cardname)
         fileopen.close()
-        if id in cardsid:
+        if id.lower() == "dupes":
+            dupelist = []
+            oglist = []
+            value = 0
+            for card in cardsid:
+                if card not in oglist:
+                    oglist.append(card)
+                else:
+                    dupelist.append(card)
+                    cardname = retCard(TableofCards,card)
+                    value += cardvalues[cardname.get_rarity()]
+            if len(dupelist) == 0:
+                await ctx.send("You have no dupes!")
+            else:
+                await ctx.send(f'You are about to sell {len(dupelist)} cards for {value} gold. Proceed? (Y/N)')
+                def checkvalid(msg):
+                    return msg.author == ctx.author and msg.channel == ctx.channel
+                replym = await bot.wait_for("message", check=checkvalid)
+                reply = replym.content
+                if reply.lower() == "n":
+                    await ctx.send("Understood. This operation has been canceled.")
+                    return
+                elif reply.lower() == "y":
+                    try:
+                        userprofopen = open(f"userprof/{ctx.message.guild.id}{ctx.author.id}profile.csv",'r')
+                        proflist = []
+                        for line in userprofopen:
+                            proflist.append(line.strip())
+                        if len(proflist) < 3:
+                            proflist.append(0)
+                        print(proflist)
+                        userprofopen.close()
+                        userprofwrite = open(f"userprof/{ctx.message.guild.id}{ctx.author.id}profile.csv",'w')
+                        proflist[2] = int(proflist[2]) + value
+                        proflist[0] = int(proflist[0]) - len(dupelist)
+                        print(proflist[2])
+                        for line in proflist: #change as prof changes - packs should be last
+                            userprofwrite.write(str(line) + "\n")
+                            print(line)
+                        userprofwrite.close()
+                        fileopen = open(f"usercards/{ctx.message.guild.id}{ctx.author.id}cards.csv",'w')
+                        for ci in oglist:
+                            fileopen.write(ci + "\n")
+                        fileopen.close()
+                        await ctx.send(f'You have sold {len(dupelist)} cards for {value} gold!')
+                    except FileNotFoundError:
+                        await ctx.send("We don't have your profile! Use ?pullcard to start!")
+                else:
+                    await ctx.send("Not a valid option. Canceling operation.")
+                    return
+        elif id in cardsid:
             index = cardsid.index(id)
             cardsid.pop(index)
             cardsold = cardscollection.pop(index)
-            fileopen = open(f"usercards/{ctx.message.guild.id}{ctx.author.id}cards.csv",'w')
-            for ci in cardsid:
-                fileopen.write(ci + "\n")
-            fileopen.close()
-            value = cardvalues[cardsold.get_rarity()]
             try:
+                fileopen = open(f"usercards/{ctx.message.guild.id}{ctx.author.id}cards.csv",'w')
+                for ci in cardsid:
+                    fileopen.write(ci + "\n")
+                fileopen.close()
+                value = cardvalues[cardsold.get_rarity()]
                 userprofopen = open(f"userprof/{ctx.message.guild.id}{ctx.author.id}profile.csv",'r')
                 proflist = []
                 for line in userprofopen:
@@ -403,8 +456,11 @@ async def sell(ctx,id=""):
                 userprofopen.close()
                 userprofwrite = open(f"userprof/{ctx.message.guild.id}{ctx.author.id}profile.csv",'w')
                 proflist[2] = int(proflist[2]) + value
+                proflist[0] = int(proflist[0]) - 1
+                print(proflist[2])
                 for line in proflist: #change as prof changes - packs should be last
                     userprofwrite.write(str(line) + "\n")
+                    print(line)
                 userprofwrite.close()
                 await ctx.send(f"You have sold {cardsold.get_name()} for {value} gold!")
             except FileNotFoundError:
@@ -542,7 +598,7 @@ async def pcollection(ctx,type=''):
                         authorcardstodisplay.append(cardname)
                 elif type.lower() == "id":
                     idlist.append(int(line.strip()))
-                    idlist.sort() #change this later so it's not O(n) time. it might not matter anyway
+                    idlist.sort() #change this later so it's not O(n log(n)) time. it might not matter anyway
             for id in idlist:
                 authorcardstodisplay.append(retCard(TableofCards,str(id)))
             if len(authorcardstodisplay) == 0:
@@ -847,7 +903,4 @@ async def ping(ctx):
     '''
     await ctx.send('Pong!')
 
-
 bot.run(TOKEN)
-
-
